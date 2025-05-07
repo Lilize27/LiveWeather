@@ -13,10 +13,19 @@ const windValueTxt=document.querySelector('.wind-value-txt')
 const weatherSummaryImg=document.querySelector('.weather-summary-image')
 const currentDateTxt=document.querySelector('.current-date-txt')
 
+const forecastItem=document.querySelector('.forecast-item-container')
+
 const APIKey='7ea8e93a82795eb3f01171225bef07c1'
 
 function getWeatherIcon(id){
-
+   if (id<=232) return 'thunderstorm.svg'
+   if (id<=321) return 'drizzle.svg'
+   if (id<=531) return 'rain.svg'
+   if (id<=622) return 'snow.svg'
+   if (id<=781) return 'atmosphere.svg'
+   if (id<=800) return 'clear.svg'
+   else return 'clouds.svg'
+   
 }
 
 searchBtn.addEventListener('click', () => {
@@ -45,6 +54,16 @@ const response=await fetch(APIURL)
 return response.json()
 }
 
+function getCurrentDate(){
+    const currDate=new Date()
+    const options={
+        weekday:'short',
+        day:'2-digit',
+        month:'short'
+    }
+    return currDate.toLocaleDateString('en-GB', options)
+}
+
 async function updateWeatherInfo(city){
     const weatherData=await getFetchData('weather',city)
 
@@ -65,9 +84,48 @@ async function updateWeatherInfo(city){
     humidityTxt.textContent=humidity+'%'
     windValueTxt.textContent=speed+'M/s'
 
-    weatherSummaryImg.src='assets/weather/${getWeatherIcon(id)}'
+    currentDateTxt.textContent=getCurrentDate()
+    weatherSummaryImg.src = `assets/weather/${getWeatherIcon(id)}`
 
+    await updateForecastInfo(city)
     showDisplaySection(weatherInfoSection)
+}
+
+async function updateForecastInfo(city){
+    const forecastData=await getFetchData('forecast', city)
+
+     const timeTaken='12:00:00'
+    const todayDate=new Date().toISOString().split('T')[0]
+
+     forecastItem.innerHTML=''
+    forecastData.list.forEach(forecastWeather=>{
+        if(forecastWeather.dt_txt.includes(timeTaken)&& !forecastWeather.dt_txt.includes(todayDate)){
+            updateForecastItems(forecastWeather)
+        }
+    })
+
+}
+
+function updateForecastItems(weatherData){
+ const{
+    dt_txt:date,
+    weather:[{id}],
+    main:{temp}
+ }=weatherData
+
+const dateTaken=new Date(date)
+const dateOptions={
+    day:'2-digit',
+    month:'short'
+}
+const dateResult=dateTaken.toLocaleDateString('en-US',dateOptions)
+
+ const forecastItemDIV=`<div class="forecast-item">
+                        <h5 class="forecast-item-date regular-txt">${dateResult}</h5>
+                        <img src="assets/weather/${getWeatherIcon(id)}" alt="" class="forecast-item-img">
+                        <h5 class="forecast-item-temp">${Math.round(temp)} °C</h5>
+                    </div>`
+        forecastItem.insertAdjacentHTML('beforeend',forecastItemDIV)
 }
 
 function showDisplaySection(section){
